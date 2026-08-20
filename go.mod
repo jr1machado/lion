@@ -88,3 +88,8 @@ require (
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
+
+// Sprint S11 / ADR-015: local fork adding ConnectOptions.ShouldRecord
+// (selective session recording). See ./sdk-go-patch and PATCH_REGISTER.md
+// (Core repo). Re-check on every sdk-go bump.
+replace github.com/jumpserver-dev/sdk-go => ./sdk-go-patch

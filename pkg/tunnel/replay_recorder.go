@@ -60,6 +60,15 @@ func (r *ReplayRecorder) Start(ctx context.Context) {
 		logger.Warnf("ReplayRecorder %s storage is null, not record", r.SessionId)
 		return
 	}
+	// Sprint S11 / ADR-015: selective session recording. Two independent
+	// gates — global storage config (above, unchanged) AND the per-session
+	// should_record hint computed by Core (privileged account OR critical
+	// asset). Fail-open: AuthInfo nil or hint absent both mean "record",
+	// matching JumpServer's pre-S11 behavior.
+	if r.tunnelSession.AuthInfo != nil && !r.tunnelSession.AuthInfo.ConnectOptions.ShouldRecordSession() {
+		logger.Infof("ReplayRecorder %s: should_record=false, skip recording", r.SessionId)
+		return
+	}
 	rootPath := filepath.Join(config.GlobalConfig.SessionFolderPath, r.SessionId)
 	_ = os.MkdirAll(rootPath, os.ModePerm)
 	r.RootPath = rootPath
