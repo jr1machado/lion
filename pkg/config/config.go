@@ -59,6 +59,8 @@ type Config struct {
 	IgnoreVerifyCerts bool   `mapstructure:"IGNORE_VERIFY_CERTS"`
 	PandaHost         string `mapstructure:"PANDA_HOST"`
 	EnablePanda       bool   `mapstructure:"ENABLE_PANDA"`
+	PandaKeyID        string `mapstructure:"PANDA_KEY_ID"`
+	PandaKeySecret    string `mapstructure:"PANDA_KEY_SECRET"`
 
 	ReplayMaxSize    int    `mapstructure:"REPLAY_MAX_SIZE"`
 	SecretEncryptKey string `mapstructure:"SECRET_ENCRYPT_KEY"`
@@ -141,6 +143,8 @@ func getDefaultConfig() Config {
 		EnableRemoteAPPCopyPaste:  false,
 		CleanDriveScheduleTime:    1,
 		PandaHost:                 "http://panda:9001",
+		PandaKeyID:                "panda",
+		PandaKeySecret:            "",
 		ReplayMaxSize:             defaultMaxSize,
 		VideoWorkerHost:           "http://video:9000",
 		DriveScope:                DriverScopeUser,

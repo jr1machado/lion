@@ -632,10 +632,9 @@ func MustValidKey(key model.AccessKey) model.AccessKey {
 
 func NewPandaClient(cfg config.Config) *panda.Client {
 	pandaHost := cfg.PandaHost
-	var key model.AccessKey
-	if err := key.LoadFromFile(cfg.AccessKeyFilePath); err != nil {
-		logger.Errorf("Create panda client failed: loading access key err %s", err)
-		return nil
+	key := model.AccessKey{ID: cfg.PandaKeyID, Secret: cfg.PandaKeySecret}
+	if key.Secret == "" {
+		logger.Errorf("PANDA_KEY_SECRET is empty; panda client will fail authentication")
 	}
 	return panda.NewClient(pandaHost, key, cfg.IgnoreVerifyCerts)
 }
