@@ -35,6 +35,13 @@ define make_artifact_full
 	rm -rf $(BUILDDIR)/$(NAME)-$(VERSION)-$(1)-$(2) $(BUILDDIR)/$(NAME)-$(1)-$(2)
 endef
 
+# Hash Access - same fix as gateways/koko/Makefile: without .PHONY, a
+# leftover build/ directory from an unrelated earlier run makes `make`
+# treat these targets as already satisfied and silently skip the real
+# build - found live during a Docker build of this image.
+.PHONY: build all local darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 \
+	linux-loong64 linux-ppc64le linux-mips64le linux-s390x linux-riscv64 lion-ui
+
 build:
 	GOARCH=$(GOARCH) GOOS=$(GOOS) $(GOBUILD) -o $(BUILDDIR)/$(NAME) .
 
