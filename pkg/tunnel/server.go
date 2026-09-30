@@ -323,7 +323,27 @@ func (g *GuacamoleTunnelServer) Connect(ctx *gin.Context) {
 		currentIndex:  0,
 	}
 	childCtx, cancel := context.WithCancel(ctx)
-	replayRecorder.Start(childCtx)
+	recordingActive := replayRecorder.Start(childCtx)
+	// Sprint_43-Record-Session.md - Tier 0/1 "fail closed": Require
+	// Session Recording denies the session if the recorder didn't
+	// actually start, rather than proceeding unrecorded (the pre-existing
+	// fail-open default, kept for every asset that doesn't set this
+	// policy). Checked before returning `conn` to the caller (below),
+	// i.e. before the websocket ever starts relaying guacd frames to the
+	// operator.
+	if !recordingActive && tunnelSession.AuthInfo != nil && tunnelSession.AuthInfo.ConnectOptions.IsRecordingRequired() {
+		cancel()
+		g.Cache.Delete(&conn)
+		msg := "Session recording is required for this asset but could not be initialized. Access denied."
+		logger.Errorf("Session[%s] recording required but failed to initialize, refusing session", sessionId)
+		_ = ws.WriteMessage(websocket.TextMessage, []byte(msg))
+		if err = tunnelSession.DisConnectedCallback(); err != nil {
+			logger.Errorf("Session DisConnectedCallback err: %+v", err)
+		}
+		reason := model.SessionLifecycleLog{Reason: msg}
+		g.RecordLifecycleLog(sessionId, model.AssetConnectFinished, reason)
+		return
+	}
 	defer func() {
 		cancel()
 		logger.Infof("replayRecorder[%s] stop", sessionId)

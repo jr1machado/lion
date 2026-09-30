@@ -55,10 +55,15 @@ func (r *ReplayRecorder) startRecordPartReplay(ctx context.Context) {
 	go r.recordReplay(ctx, &r.wg)
 }
 
-func (r *ReplayRecorder) Start(ctx context.Context) {
+// Start returns whether recording is actually active after this call.
+// Sprint_43-Record-Session.md - the caller (server.go) uses this to
+// enforce Tier 0/1 "Require Session Recording": false here, combined
+// with the session's RecordingRequired policy, must refuse the session
+// rather than let it proceed silently unrecorded.
+func (r *ReplayRecorder) Start(ctx context.Context) bool {
 	if r.tunnelSession.TerminalConfig.ReplayStorage.TypeName == "null" {
 		logger.Warnf("ReplayRecorder %s storage is null, not record", r.SessionId)
-		return
+		return false
 	}
 	// Sprint S11 / ADR-015: selective session recording. Two independent
 	// gates — global storage config (above, unchanged) AND the per-session
@@ -67,13 +72,17 @@ func (r *ReplayRecorder) Start(ctx context.Context) {
 	// matching JumpServer's pre-S11 behavior.
 	if r.tunnelSession.AuthInfo != nil && !r.tunnelSession.AuthInfo.ConnectOptions.ShouldRecordSession() {
 		logger.Infof("ReplayRecorder %s: should_record=false, skip recording", r.SessionId)
-		return
+		return false
 	}
 	rootPath := filepath.Join(config.GlobalConfig.SessionFolderPath, r.SessionId)
-	_ = os.MkdirAll(rootPath, os.ModePerm)
+	if err := os.MkdirAll(rootPath, os.ModePerm); err != nil {
+		logger.Errorf("ReplayRecorder %s: create record dir %s failed: %v", r.SessionId, rootPath, err)
+		return false
+	}
 	r.RootPath = rootPath
 	r.WriteSessionMeta(r.tunnelSession.Created)
 	go r.run(ctx)
+	return true
 }
 
 func (r *ReplayRecorder) WriteSessionMeta(t common.UTCTime) {

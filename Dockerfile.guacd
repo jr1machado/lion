@@ -38,8 +38,7 @@ ARG DEPENDENCIES="                    \
         vim                           \
         wget"
 RUN set -ex \
-    && apk update \
-    && apk add ${DEPENDENCIES}
+    && apk add --no-cache ${DEPENDENCIES}
 
 WORKDIR /opt/lion
 

@@ -95,6 +95,14 @@ type ConnectOptions struct {
 	// treat nil as true (record), never as false, so a missing hint never
 	// silently reduces recording coverage below the pre-S11 baseline.
 	ShouldRecord *bool `json:"should_record,omitempty"`
+
+	// Sprint_43-Record-Session.md - Tier 0/1 "fail closed": if true, a
+	// session that fails to initialize its recorder must be refused
+	// rather than proceed unrecorded. Opposite fail-open default from
+	// ShouldRecord above (nil -> false/not required) - an absent hint
+	// (older Core) must never start refusing sessions that weren't
+	// refused before.
+	RecordingRequired *bool `json:"recording_required,omitempty"`
 }
 
 // ShouldRecordSession returns whether this session should be recorded.
@@ -102,6 +110,13 @@ type ConnectOptions struct {
 // "record", matching JumpServer's pre-S11 behavior.
 func (o ConnectOptions) ShouldRecordSession() bool {
 	return o.ShouldRecord == nil || *o.ShouldRecord
+}
+
+// IsRecordingRequired returns whether the session must be refused if
+// recording can't be initialized. Fail-open by design: nil means "not
+// required" (older Core never refuses a session over this).
+func (o ConnectOptions) IsRecordingRequired() bool {
+	return o.RecordingRequired != nil && *o.RecordingRequired
 }
 
 type ConnectMethod struct {
